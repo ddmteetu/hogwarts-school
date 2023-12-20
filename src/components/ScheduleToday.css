@@ -1,0 +1,17 @@
+.page-holder {
+  background-image: url('../../public/images//hogwarts-school-bg.jpg');
+  background-attachment: fixed;
+  background-position: center;
+}
+
+.bordered-col {
+  border-color: #000;
+  border-style: dashed;
+  border-width: 0 0 2px 0;
+}
+
+@media (min-width: 768px) {
+  .bordered-col {
+    border-width: 0 2px 0 0;
+  }
+}
