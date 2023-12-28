@@ -33,6 +33,7 @@ const ScheduleToday = () => {
     return teachers;
   };
 
+  // STATE initialization
   const [teacherAttendance, setTeacherAttendance] = useState(
     giveTeachers(HierarchyTree)
   );

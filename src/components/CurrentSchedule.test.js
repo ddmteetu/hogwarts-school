@@ -5,31 +5,55 @@ const AvailableSubjects = ['Potions Master', 'Defense Against the Dark Arts'];
 const StudentSubjectTeacherAllocation = [
   {
     name: 'Harry Potter',
+    img: {
+      isPresent: '/images/harry-potter.jpg',
+      isAbsent: '/images/harry-potter-absent.jpg',
+    },
     subject: AvailableSubjects[0],
     teacher: 'Horace Slughorn',
   },
   {
     name: 'Hermione Granger',
+    img: {
+      isPresent: '/images/hermione-granger.jpg',
+      isAbsent: '/images/hermione-granger-absent.jpg',
+    },
     subject: AvailableSubjects[0],
     teacher: '',
   },
   {
     name: 'Ron Weasley',
+    img: {
+      isPresent: '/images/ron-weasley.jpg',
+      isAbsent: '/images/ron-weasley-absent.jpg',
+    },
     subject: AvailableSubjects[0],
     teacher: '',
   },
   {
     name: 'Draco Malfoy',
+    img: {
+      isPresent: '/images/draco-malfoy.jpg',
+      isAbsent: '/images/draco-malfoy-absent.jpg',
+    },
     subject: AvailableSubjects[0],
     teacher: 'Horace Slughorn',
   },
   {
     name: 'Padma Patil',
+    img: {
+      isPresent: '/images/padma-patil.jpg',
+      isAbsent: '/images/padma-patil-absent.jpg',
+    },
     subject: AvailableSubjects[0],
     teacher: '',
   },
   {
     name: 'Luna Lovegood',
+    img: {
+      isPresent: '/images/luna-lovegood.jpg',
+      isAbsent: '/images/luna-lovegood-absent.jpg',
+    },
     subject: AvailableSubjects[0],
     teacher: 'Severus Snape',
   },
