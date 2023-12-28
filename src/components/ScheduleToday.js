@@ -2,24 +2,51 @@ import { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './ScheduleToday.css';
 import { HierarchyTree, StudentSubjectTeacherAllocation } from '../store/data';
-import TeacherTree from './TeacherTree';
 import CurrentSchedule from './CurrentSchedule';
+import TeacherAttendance from './TeacherAttendance';
 
 const ScheduleToday = () => {
-  const [teacherAttendance, setTeacherAttendance] = useState(HierarchyTree);
+  // make teachers hierarchy tree, a flat array of teachers
+  const giveTeachers = (teacherTree) => {
+    let teachers = [];
+    const treeToPlainArray = (teacherTree, teacherIndex) => {
+      teacherTree.forEach((element, index) => {
+        const tIndex =
+          teacherIndex !== undefined ? `${teacherIndex}.${index}` : `${index}`;
+        const elementObj = {};
+        for (const prop in element) {
+          if (prop !== 'subordinate') {
+            elementObj[prop] = element[prop];
+          }
+        }
+        teachers.push({
+          ...elementObj,
+          teacherIndex: tIndex,
+        });
+        if (element.subordinate.length > 0) {
+          treeToPlainArray(element.subordinate, tIndex);
+        }
+      });
+    };
+
+    treeToPlainArray(teacherTree);
+    return teachers;
+  };
+
+  const [teacherAttendance, setTeacherAttendance] = useState(
+    giveTeachers(HierarchyTree)
+  );
   const [teacherAllocation, setTeacherAllocation] = useState(
     StudentSubjectTeacherAllocation
   );
 
-  const findStandbyTeacher = (teacherTree, subject) => {
+  const findStandbyTeacher = (teachers, subject) => {
     let teacherName;
-    for (let i = 0; i < teacherTree.length; i++) {
-      if (teacherTree[i].subject.includes(subject)) {
-        if (teacherTree[i].isStandby) {
-          teacherName = teacherTree[i].name;
+    for (let i = 0; i < teachers.length; i++) {
+      if (teachers[i].subject.includes(subject)) {
+        if (teachers[i].isStandby) {
+          teacherName = teachers[i].name;
           break;
-        } else {
-          teacherName = findStandbyTeacher(teacherTree[i].subordinate, subject);
         }
       }
     }
@@ -30,40 +57,19 @@ const ScheduleToday = () => {
     return findStandbyTeacher(teacherAttendance, subject);
   };
 
-  const getTeacherAccessor = (currentAccessor, nextIndex) => {
-    return currentAccessor.subordinate[nextIndex];
-  };
-
-  const getNewIndex = (indexArr) => {
-    let newIndex;
-    for (let i = 0; i < indexArr.length - 1; i++) {
-      if (newIndex) {
-        newIndex = `${newIndex}.${indexArr[i]}`;
-      } else {
-        newIndex = `${indexArr[i]}`;
-      }
-    }
-    return newIndex;
-  };
-
   const getUpdatedTeacher = (newIndex) => {
     let updatedIndex = newIndex;
     let newIndexArr = updatedIndex.split('.');
-    let currentAccessor = teacherAttendance[newIndexArr[0]];
+    let currentAccessor = teacherAttendance.find(
+      (teacher) => teacher.teacherIndex === updatedIndex
+    );
     let updatedTeacherValue;
-    if (newIndexArr.length > 1) {
-      for (let i = 1; i < newIndexArr.length; i++) {
-        currentAccessor = getTeacherAccessor(currentAccessor, newIndexArr[i]);
-      }
-      if (currentAccessor.isPresent) {
-        updatedTeacherValue = currentAccessor.name;
-      } else {
-        updatedIndex = getNewIndex(newIndexArr);
-        updatedTeacherValue = getUpdatedTeacher(updatedIndex);
-      }
+    if (currentAccessor.isPresent) {
+      updatedTeacherValue = currentAccessor.name;
     } else {
-      if (currentAccessor.isPresent) {
-        updatedTeacherValue = currentAccessor.name;
+      if (newIndexArr.length > 1) {
+        newIndexArr.pop();
+        updatedTeacherValue = getUpdatedTeacher(newIndexArr.join('.'));
       } else {
         updatedTeacherValue = 'Not Assigned';
       }
@@ -75,44 +81,47 @@ const ScheduleToday = () => {
     const teacherAvailability = event.target.value;
 
     setTeacherAttendance((prevState) => {
-      const indexArr = teacherIndex.split('.');
-      if (indexArr.length > 1) {
-        let currentAccessor = prevState[indexArr[0]];
-        for (let i = 1; i < indexArr.length; i++) {
-          currentAccessor = getTeacherAccessor(currentAccessor, indexArr[i]);
+      prevState.forEach((teacher) => {
+        if (teacher.teacherIndex === teacherIndex) {
+          teacher.isPresent = teacherAvailability === 'true' && true;
         }
-        currentAccessor.isPresent = teacherAvailability === 'true' && true;
-      } else {
-        prevState[indexArr[0]].isPresent =
-          teacherAvailability === 'true' && true;
-      }
+      });
       return [...prevState];
     });
 
     setTeacherAllocation((prevState) => {
       const indexArr = teacherIndex.split('.');
-      let updatedTeacher;
-      if (indexArr.length > 1) {
-        let currentAccessor = teacherAttendance[indexArr[0]];
-        for (let i = 1; i < indexArr.length; i++) {
-          currentAccessor = getTeacherAccessor(currentAccessor, indexArr[i]);
-        }
-        updatedTeacher = currentAccessor;
-      } else {
-        updatedTeacher = teacherAttendance[indexArr[0]];
-      }
+      const updatedTeacher = teacherAttendance.find(
+        (teacher) => teacher.teacherIndex === teacherIndex
+      );
       prevState.forEach((studentData) => {
-        if (
-          studentData.teacher === updatedTeacher.name &&
-          updatedTeacher.subject.includes(studentData.subject) &&
-          !updatedTeacher.isPresent
-        ) {
-          if (indexArr.length > 1) {
-            let newIndex = getNewIndex(indexArr);
-            const updatedTeacherValue = getUpdatedTeacher(newIndex);
-            studentData.teacher = updatedTeacherValue;
-          } else {
-            studentData.teacher = 'Not Assigned';
+        if (updatedTeacher.subject.includes(studentData.subject)) {
+          if (!updatedTeacher.isPresent) {
+            if (studentData.teacher === updatedTeacher.name) {
+              if (indexArr.length > 1) {
+                const parentIndexArr = [...indexArr];
+                parentIndexArr.pop();
+                const updatedTeacherValue = getUpdatedTeacher(
+                  parentIndexArr.join('.')
+                );
+                studentData.teacher = updatedTeacherValue;
+              } else {
+                studentData.teacher = 'Not Assigned';
+              }
+            }
+          } else if (updatedTeacher.isPresent) {
+            const currentTeacher = teacherAttendance.find(
+              (teacher) => teacher.name === studentData.teacher
+            );
+            if (currentTeacher === undefined) {
+              studentData.teacher = updatedTeacher.name;
+            } else {
+              const currentTeacherIndexArr =
+                currentTeacher.teacherIndex.split('.');
+              if (currentTeacherIndexArr.length < indexArr.length) {
+                studentData.teacher = updatedTeacher.name;
+              }
+            }
           }
         }
       });
@@ -121,6 +130,7 @@ const ScheduleToday = () => {
   };
 
   useEffect(() => {
+    // fill not allocated teacher with teacher higher up in the hierarchy tree
     setTeacherAllocation((prevState) => {
       prevState.forEach((studentData) => {
         if (studentData.teacher.trim() === '') {
@@ -151,8 +161,8 @@ const ScheduleToday = () => {
               </thead>
               <tbody>
                 {teacherAttendance && teacherAttendance.length > 0 && (
-                  <TeacherTree
-                    teacherTree={teacherAttendance}
+                  <TeacherAttendance
+                    teachers={teacherAttendance}
                     attendanceChange={teacherAttendanceChangeHandler}
                   />
                 )}

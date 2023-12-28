@@ -1,8 +1,6 @@
-import TeacherTree from './TeacherTree';
-
-const TeacherAttendance = ({ teacher, teacherIndex, attendanceChange }) => {
-  const output = (
-    <tr data-index={teacherIndex} aria-label={teacher.name}>
+const TeacherAttendance = ({ teachers, attendanceChange }) => {
+  return teachers.map((teacher, index) => (
+    <tr key={index} data-index={teacher.teacherIndex} aria-label={teacher.name}>
       <td>
         <div className="row">
           <div className="col-md-4">
@@ -22,29 +20,14 @@ const TeacherAttendance = ({ teacher, teacherIndex, attendanceChange }) => {
       <td>
         <select
           value={teacher.isPresent}
-          onChange={(event) => attendanceChange(event, teacherIndex)}
+          onChange={(event) => attendanceChange(event, teacher.teacherIndex)}
         >
           <option value="true">Present</option>
           <option value="false">Absent</option>
         </select>
       </td>
     </tr>
-  );
-
-  if (teacher.subordinate.length > 0) {
-    return (
-      <>
-        {output}
-        <TeacherTree
-          teacherTree={teacher.subordinate}
-          teacherIndex={teacherIndex}
-          attendanceChange={attendanceChange}
-        />
-      </>
-    );
-  } else {
-    return output;
-  }
+  ));
 };
 
 export default TeacherAttendance;
